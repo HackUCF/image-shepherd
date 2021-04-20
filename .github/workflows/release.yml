@@ -27,4 +27,4 @@ jobs:
           # Get the tag from ref/tag/vX.Y.Z
           TAG=$(git show-ref | grep ${HEAD_SHA} | grep ' refs/tags/' | cut -d ' ' -f 2 | cut -d '/' -f 3 | sed -e 's/^v//')
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-          gh release create --title "${TAG} - $(date +%d-%b-%Y)" ${TAG} ./build/*.zip
+          gh release create --title "${TAG} - $(date +%d-%b-%Y)" v${TAG} ./build/*.zip
