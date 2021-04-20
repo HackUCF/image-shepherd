@@ -38,12 +38,14 @@ func (i Image) Init() {
 
 func (i Image) Upload(c *gophercloud.ServiceClient) error {
 	// Download the image
+	zap.S().Infof("Downloading from %s", i.Url)
 	resp, err := grab.Get(".", i.Url)
 	if err != nil {
 		return err
 	}
 
 	// Convert to raw
+	zap.S().Info("Converting image from qcow2 to raw")
 	rawFile := fmt.Sprintf("%s.raw", resp.Filename)
 	cmd := exec.Command("qemu-img", "convert", "-f", "qcow2", "-O", "raw", resp.Filename, rawFile)
 	err = cmd.Run()
@@ -56,6 +58,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient) error {
 	}
 
 	// Create the image object
+	zap.S().Info("Creating image object")
 	createOpts := images.CreateOpts{
 		Name:            i.Name,
 		Tags:            i.Tags,
@@ -67,6 +70,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient) error {
 	if err != nil {
 		return err
 	}
+	zap.S().Infof("Created image %s", res.ID)
 
 	// Upload the image data
 	data, err := os.Open(rawFile)
@@ -75,6 +79,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient) error {
 	}
 	defer data.Close()
 
+	zap.S().Info("Uploading image data")
 	return imagedata.Upload(c, res.ID, data).ExtractErr()
 }
 
