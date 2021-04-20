@@ -14,8 +14,12 @@ Each release in the changelog is divided into the following sections:
 - Fixed
 - Security
 
-[Unreleased]
-------------
+[1.2.0] - 2021-04-20
+--------------------
+
+### Added
+
+- Check `images.[].public` option to determine if image should be public or private
 
 [1.1.0] - 2021-04-20
 --------------------
@@ -29,6 +33,7 @@ Each release in the changelog is divided into the following sections:
 
 The initial release of image-shepherd.
 
-[Unreleased]: https://github.com/s-newman/image-shepherd/compare/v1.1.0..main
+[Unreleased]: https://github.com/s-newman/image-shepherd/compare/v1.2.0..main
+[1.2.0]: https://github.com/s-newman/image-shepherd/compare/v1.1.0..v1.2.0
 [1.1.0]: https://github.com/s-newman/image-shepherd/compare/v1.0.0..v1.1.0
 [1.0.0]: https://github.com/s-newman/image-shepherd/releases/tag/v1.0.0
