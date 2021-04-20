@@ -14,6 +14,16 @@ Each release in the changelog is divided into the following sections:
 - Fixed
 - Security
 
+[Unreleased]
+------------
+
+[1.2.1] - 2021-04-20
+--------------------
+
+### Fixed
+
+- Add `qemu-utils` to docker image
+
 [1.2.0] - 2021-04-20
 --------------------
 
@@ -33,7 +43,8 @@ Each release in the changelog is divided into the following sections:
 
 The initial release of image-shepherd.
 
-[Unreleased]: https://github.com/s-newman/image-shepherd/compare/v1.2.0..main
+[Unreleased]: https://github.com/s-newman/image-shepherd/compare/v1.2.1..main
+[1.2.1]: https://github.com/s-newman/image-shepherd/compare/v1.2.0..v1.2.1
 [1.2.0]: https://github.com/s-newman/image-shepherd/compare/v1.1.0..v1.2.0
 [1.1.0]: https://github.com/s-newman/image-shepherd/compare/v1.0.0..v1.1.0
 [1.0.0]: https://github.com/s-newman/image-shepherd/releases/tag/v1.0.0
