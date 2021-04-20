@@ -1,22 +1,28 @@
 package := github.com/s-newman/image-shepherd/cmd/shepherd
 build_name := image-shepherd
 build_dir := build
+docker_registry := ghcr.io/s-newman/image-shepherd
 
-.PHONY: build dist clean
-
-define build_dist
-	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o $(build_dir)/$(build_name)-$(1)-$(2) $(package)
-	zip -j $(build_dir)/$(build_name)-$(1)-$(2).zip $(build_dir)/$(build_name)-$(1)-$(2)
-endef
+.PHONY: build dist deps clean docker
 
 build:
 	CGO_ENABLED=0 go build -o $(build_name) $(package)
 
 dist:
-	$(call build_dist,linux,amd64)
-	$(call build_dist,windows,amd64)
-	$(call build_dist,darwin,amd64)
-	$(call build_dist,darwin,arm64)
+	scripts/go-build.sh linux amd64 $(build_dir) $(build_name) $(package)
+	scripts/go-build.sh windows amd64 $(build_dir) $(build_name) $(package)
+	scripts/go-build.sh darwin amd64 $(build_dir) $(build_name) $(package)
+	scripts/go-build.sh darwin arm64 $(build_dir) $(build_name) $(package)
+
+deps:
+	go mod download
+
+docker-build:
+	docker build -f docker/$(build_name).Dockerfile -t $(docker_registry)/$(build_name):latest .
+
+docker-push:
+	scripts/docker-push.sh $(docker_registry)/$(build_name)
 
 clean:
-	rm -f $(build_dir)/* $(build_name)
+	find $(build_dir) -type f | grep -v .gitkeep | xargs rm
+	rm -f $(build_name)
