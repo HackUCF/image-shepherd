@@ -12,8 +12,8 @@ goarch=${2}
 build_dir=${3}
 build_name=${4}
 package=${5}
-build_path="${build_dir}/${build_name}-${goos}-${goarch}"
 set -eoux pipefail
 
-GOOS=${goos} GOARCH=${goarch} CGO_ENABLED=0 go build -o ${build_path} ${package}
-zip -j ${build_path}.zip ${build_path}
+GOOS=${goos} GOARCH=${goarch} CGO_ENABLED=0 go build -o ${build_dir}/${build_name} ${package}
+zip -j ${build_dir}/${build_name}-${goos}-${goarch}.zip ${build_dir}/${build_name}
+rm ${build_dir}/${build_name}
