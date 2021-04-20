@@ -15,11 +15,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install GitHub CLI
+      - name: Install GitHub CLI and zip
         run: |
           git clone https://github.com/cli/cli.git
           cd cli
           make install
+          apt-get update && apt-get install -y zip
       - name: Build distributable artifacts
         run: make dist
       - name: Create and push tag
