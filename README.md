@@ -103,7 +103,17 @@ images:
       os_version: "20.04" # Make sure to quote version numbers so YAML parses them as strings!
 ```
 
-If they aren't configured, Image Shepherd will set the `architecture` property to `x86_64` and the `hypervisor_type` to `qemu`. To override these defaults, configure them in your `images.yaml`.
+If they aren't configured, Image Shepherd will set the following properties.
+
+| Name | Value |
+| --- | --- |
+| `architecture` | `x86_64` |
+| `hypervisor_type` | `qemu` |
+| `vm_mode` | `hvm` |
+| `uploaded` | Current date in 02-Jan-2006 format |
+| `image_family` | Name of image |
+
+You can override these defaults by setting the values of the properties in your `images.yaml` file.
 
 ```yaml
 images:
