@@ -6,6 +6,8 @@ Image Shepherd is a utility for adding prebuilt cloud images to OpenStack.
 
 Image Shepherd will download prebuilt qcow2 images from sources you define, convert them to raw images, and then upload them to your OpenStack cloud. It is intended to be used on an automated schedule, such as in a cron job or in a scheduled CI pipeline. That way, you can always have a set of updated images ready to go in your OpenStack cloud.
 
+If Image Shepherd finds an image that's already named the same as the image you want to upload, it will rename and hide that image. The date that the old image was originally uploaded will be appended to its original name. This means the image name you set in `images.yaml` will always refer to the most up-to-date image available.
+
 ## Installation
 
 Image Shepherd is available as a docker container.
