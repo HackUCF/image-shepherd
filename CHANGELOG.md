@@ -17,10 +17,18 @@ Each release in the changelog is divided into the following sections:
 [Unreleased]
 ------------
 
+[1.1.0] - 2021-04-20
+--------------------
+
+### Added
+
+- Rename and hide old images so the named image will always be the latest version
+
 [1.0.0] - 2021-04-19
 --------------------
 
 The initial release of image-shepherd.
 
-[Unreleased]: https://github.com/s-newman/image-shepherd/compare/v1.0.0..main
+[Unreleased]: https://github.com/s-newman/image-shepherd/compare/v1.1.0..main
+[1.1.0]: https://github.com/s-newman/image-shepherd/compare/v1.0.0..v1.1.0
 [1.0.0]: https://github.com/s-newman/image-shepherd/releases/tag/v1.0.0

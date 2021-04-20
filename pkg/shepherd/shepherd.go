@@ -5,10 +5,13 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/s-newman/image-shepherd/pkg/image"
+	"go.uber.org/zap"
 )
 
 func Run(c *gophercloud.ServiceClient, images []image.Image) {
 	for _, i := range images {
+		zap.S().Infof("Managing image %s", i.Name)
+
 		i.Init()
 
 		err := i.Upload(c)

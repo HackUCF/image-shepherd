@@ -6,6 +6,8 @@ Image Shepherd is a utility for adding prebuilt cloud images to OpenStack.
 
 Image Shepherd will download prebuilt qcow2 images from sources you define, convert them to raw images, and then upload them to your OpenStack cloud. It is intended to be used on an automated schedule, such as in a cron job or in a scheduled CI pipeline. That way, you can always have a set of updated images ready to go in your OpenStack cloud.
 
+If Image Shepherd finds an image that's already named the same as the image you want to upload, it will rename and hide that image. The date that the old image was originally uploaded will be appended to its original name. This means the image name you set in `images.yaml` will always refer to the most up-to-date image available.
+
 ## Installation
 
 Image Shepherd is available as a docker container.
@@ -103,7 +105,17 @@ images:
       os_version: "20.04" # Make sure to quote version numbers so YAML parses them as strings!
 ```
 
-If they aren't configured, Image Shepherd will set the `architecture` property to `x86_64` and the `hypervisor_type` to `qemu`. To override these defaults, configure them in your `images.yaml`.
+If they aren't configured, Image Shepherd will set the following properties.
+
+| Name | Value |
+| --- | --- |
+| `architecture` | `x86_64` |
+| `hypervisor_type` | `qemu` |
+| `vm_mode` | `hvm` |
+| `uploaded` | Current date in 02-Jan-2006 format |
+| `image_family` | Name of image |
+
+You can override these defaults by setting the values of the properties in your `images.yaml` file.
 
 ```yaml
 images:
@@ -124,24 +136,3 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
-
-
-Convert qcow2 to raw:
-
-```shell
-qemu-img convert -f qcow2 -O raw <qcow2-file> <raw-file>
-```
-
-Upload image:
-
-```shell
-openstack --os-cloud openstack image create --file <raw-file> \
-  --property architecture=x86_64 \
-  --property hypervisor_type=qemu \
-  --property os_distro=<distro-name>  \
-  --property os_version=<version-number> \
-  --property vm_mode=hvm \
-  <image-name>
-```
-
-See the `os_distro` row of [this table](https://docs.openstack.org/glance/rocky/admin/useful-image-properties.html#image-property-keys-and-values) for guidance on the distro name.
