@@ -8,6 +8,10 @@
 # Config files
 *.yaml
 
+# Images
+*.img
+*.raw
+
 # --- Golang.gitignore --------------------------------------------------------
 
 # Binaries for programs and plugins
