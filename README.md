@@ -94,6 +94,9 @@ images:
 
     # Where to download the qcow2 image from
     url: https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
+
+    # Whether to make the image publicly accessible by other projects (optional, default false)
+    public: true
   
     # A list of tags to add to the image (optional)
     tags:
