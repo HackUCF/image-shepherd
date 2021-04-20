@@ -1,14 +1,12 @@
-name: Create new release
+name: Releases
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "The tag value for the release"
-        required: true
+  push:
+    tags:
+      - v*
 
 jobs:
   new-release:
-    name: Create release ${{ github.event.inputs.tag }}
+    name: Create release from tag
     runs-on: ubuntu-latest
     container:
       image: golang:1.16
@@ -23,13 +21,10 @@ jobs:
           apt-get update && apt-get install -y zip
       - name: Build distributable artifacts
         run: make dist
-      - name: Create and push tag
+      - name: Create release for tag
         run: |
-          git config --global user.name 'Sean Newman'
-          git config --global user.email 's-newman@users.noreply.github.com'
-          git tag ${{ github.event.inputs.tag }}
-          git push --tags
-      - name: Create release
-        run: |
+          HEAD_SHA=$(git show-ref --head | grep HEAD | cut -d ' ' -f 1)
+          # Get the tag from ref/tag/vX.Y.Z
+          TAG=$(git show-ref | grep ${HEAD_SHA} | grep ' refs/tags/' | cut -d ' ' -f 2 | cut -d '/' -f 3 | sed -e 's/^v//')
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-          gh release create ${{ github.event.inputs.tag }} ./build/*.zip
+          gh release create ${TAG} ./build/*.zip
