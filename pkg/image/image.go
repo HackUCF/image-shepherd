@@ -18,6 +18,7 @@ const uploadedFmt = "02-Jan-2006"
 type Image struct {
 	Name       string
 	Url        string
+	Public     bool
 	Tags       []string
 	Properties map[string]string
 }
@@ -57,11 +58,20 @@ func (i Image) Upload(c *gophercloud.ServiceClient) error {
 		return err
 	}
 
+	// Determine the image visibility
+	var visibility images.ImageVisibility
+	if i.Public {
+		visibility = images.ImageVisibilityPublic
+	} else {
+		visibility = images.ImageVisibilityPrivate
+	}
+
 	// Create the image object
 	zap.S().Info("Creating image object")
 	createOpts := images.CreateOpts{
 		Name:            i.Name,
 		Tags:            i.Tags,
+		Visibility:      &visibility,
 		ContainerFormat: "bare",
 		DiskFormat:      "raw",
 		Properties:      i.Properties,
