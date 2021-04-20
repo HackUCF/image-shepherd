@@ -1,0 +1,25 @@
+name: Create new release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag value for the release"
+        required: true
+
+jobs:
+  new-release:
+    name: Create release ${{ github.event.inputs.tag }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Build distributable artifacts
+        run: make dist
+      - name: Create and push tag
+        run: |
+          git config --global user.name 'Sean Newman'
+          git config --global user.email 's-newman@users.noreply.github.com'
+          git tag ${{ github.event.inputs.tag }}
+          git push --tags
+      - name: Create release
+        run: gh release create ${{ github.event.inputs.tag }} ./build/*.zip
