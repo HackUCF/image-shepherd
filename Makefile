@@ -1,7 +1,7 @@
 package := github.com/s-newman/image-shepherd/cmd/image-shepherd
 build_name := image-shepherd
 build_dir := build
-docker_registry := ghcr.io/s-newman/image-shepherd
+docker_registry := ghcr.io/s-newman
 
 .PHONY: build dist deps clean docker
 
