@@ -1,4 +1,4 @@
-package := github.com/s-newman/image-shepherd/cmd/shepherd
+package := github.com/s-newman/image-shepherd/cmd/image-shepherd
 build_name := image-shepherd
 build_dir := build
 docker_registry := ghcr.io/s-newman/image-shepherd
