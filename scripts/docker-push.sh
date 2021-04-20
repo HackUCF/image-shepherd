@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Push a built docker image to a docker registry
 USAGE="USAGE: ./docker-push.sh <image-name>"
 

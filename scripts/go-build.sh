@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Build a distributable (zipped) copy for a specific target
 USAGE="USAGE: ./go-build.sh <goos> <goarch> <build-dir> <build-name> <package>"
 
