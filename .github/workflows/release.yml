@@ -10,9 +10,16 @@ jobs:
   new-release:
     name: Create release ${{ github.event.inputs.tag }}
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.16
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Install GitHub CLI
+        run: |
+          git clone https://github.com/cli/cli.git
+          cd cli
+          make install
       - name: Build distributable artifacts
         run: make dist
       - name: Create and push tag
