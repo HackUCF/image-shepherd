@@ -1,33 +1,77 @@
-# Git objects
-/.git
+# Git objects and history
+.git
+.gitignore
+.gitattributes
 
-# Docker stuff
-/docker
+# GitHub Actions
+.github/
 
-# Dev builds
-/image-shepherd
+# Docker files (don't need these in the image)
+docker/
+Dockerfile*
+docker-compose*.yml
+.dockerignore
 
-# Build artifacts
-/build/*
-!/build/.gitkeep
-
-# Config files
-*.yaml
-
-# --- Golang.gitignore --------------------------------------------------------
-
-# Binaries for programs and plugins
+# Build artifacts and binaries
+build/
+dist/
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+image-shepherd
+/image-shepherd
 
-# Test binary, built with `go test -c`
+# Go build cache and modules cache
+.cache/
+vendor/
+
+# Test files and coverage reports
 *.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+coverage.html
+*.coverprofile
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs/
+
+# Configuration and development files
+*.yaml
+*.yml
+.env
+.env.*
+
+# Scripts (build scripts not needed in container)
+scripts/
+
+# Makefile (not needed in container)
+Makefile
+
+# Large image files that shouldn't be in the container
+*.img
+*.qcow2
+*.raw
+*.xz
+*.iso
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+
+# OS generated files
+Thumbs.db
+.DS_Store

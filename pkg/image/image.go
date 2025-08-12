@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"mime"
@@ -221,6 +222,17 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		return err
 	}
 	zap.S().Infow("Download completed", "file", filename, "image", i.Name)
+	if f, err := os.Open(filename); err == nil {
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err == nil {
+			zap.S().Infow("SHA256 (downloaded file)", "file", filename, "sha256", fmt.Sprintf("%x", h.Sum(nil)))
+		} else {
+			zap.S().Warnw("Failed to compute SHA256 for downloaded file", "file", filename, "error", err)
+		}
+		_ = f.Close()
+	} else {
+		zap.S().Warnw("Failed to open downloaded file for hashing", "file", filename, "error", err)
+	}
 
 	// Handle compression and format detection, then convert to raw if needed
 	// SourceFormat and Compression can be set in images.yaml. If unset, auto-detect.
@@ -253,6 +265,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 			return "", err
 		}
 		defer out.Close()
+
 		cmd := exec.Command("gzip", "-dc", in)
 		cmd.Stdout = out
 		cmd.Stderr = os.Stderr
@@ -260,6 +273,114 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 			return "", err
 		}
 		zap.S().Infow("Decompression complete", "compression", "gz", "input", in, "output", outName)
+		return outName, nil
+	}
+
+	// extractFromTar extracts a single disk image file from a tar archive (tar.xz or tar.gz).
+	// It prefers a member named "disk.raw", otherwise falls back to the first file matching
+	// a known disk extension in priority order: .raw, .qcow2, .img, .vmdk, .vdi
+	extractFromTar := func(archivePath string, comp string) (string, error) {
+		var flag string
+		switch comp {
+		case "tar.xz", "txz":
+			flag = "-J"
+		case "tar.gz", "tgz":
+			flag = "-z"
+		default:
+			// infer from extension
+			l := strings.ToLower(archivePath)
+			if strings.HasSuffix(l, ".tar.xz") || strings.HasSuffix(l, ".txz") {
+				flag = "-J"
+			} else if strings.HasSuffix(l, ".tar.gz") || strings.HasSuffix(l, ".tgz") {
+				flag = "-z"
+			}
+		}
+
+		// List archive members
+		var listArgs []string
+		if flag != "" {
+			listArgs = []string{"-t", flag, "-f", archivePath}
+		} else {
+			listArgs = []string{"-t", "-f", archivePath}
+		}
+		zap.S().Infow("Listing tar archive entries", "archive", archivePath, "compression_flag", flag)
+		out, err := exec.Command("tar", listArgs...).Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to list tar archive %s: %w", archivePath, err)
+		}
+
+		lines := strings.Split(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n")
+		choose := func(candidates []string) string {
+			// Prefer disk.raw
+			for _, e := range candidates {
+				entry := strings.TrimSpace(e)
+				if entry == "" || strings.HasSuffix(entry, "/") {
+					continue
+				}
+				if strings.EqualFold(filepath.Base(entry), "disk.raw") {
+					return entry
+				}
+			}
+			// Otherwise choose by extension priority
+			priorities := []string{".raw", ".qcow2", ".img", ".vmdk", ".vdi"}
+			for _, ext := range priorities {
+				for _, e := range candidates {
+					entry := strings.TrimSpace(e)
+					if entry == "" || strings.HasSuffix(entry, "/") {
+						continue
+					}
+					if strings.EqualFold(filepath.Ext(entry), ext) {
+						return entry
+					}
+				}
+			}
+			// Fallback: first non-directory entry
+			for _, e := range candidates {
+				entry := strings.TrimSpace(e)
+				if entry != "" && !strings.HasSuffix(entry, "/") {
+					return entry
+				}
+			}
+			return ""
+		}
+
+		target := choose(lines)
+		if target == "" {
+			return "", fmt.Errorf("no suitable image file found in tar archive %s", archivePath)
+		}
+		zap.S().Infow("Selected image from tar archive", "archive", archivePath, "member", target)
+
+		// Extract only the selected member to a local file using stdout (-O)
+		outName := filepath.Base(target)
+		if outName == "" || outName == "." || outName == "/" {
+			outName = "extracted-image"
+		}
+		dst, err := os.Create(outName)
+		if err != nil {
+			return "", err
+		}
+		defer func() {
+			_ = dst.Close()
+			if err != nil {
+				_ = os.Remove(outName)
+			}
+		}()
+
+		var extractArgs []string
+		if flag != "" {
+			extractArgs = []string{"-x", flag, "-f", archivePath, "-O", target}
+		} else {
+			extractArgs = []string{"-x", "-f", archivePath, "-O", target}
+		}
+		zap.S().Infow("Extracting member from tar archive", "archive", archivePath, "member", target, "output", outName)
+		cmd := exec.Command("tar", extractArgs...)
+		cmd.Stdout = dst
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			return "", err
+		}
+
+		zap.S().Infow("Extraction complete", "archive", archivePath, "member", target, "output", outName)
 		return outName, nil
 	}
 
@@ -276,16 +397,41 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		} else {
 			srcFile = outName
 		}
+	case "tar.xz", "txz":
+		if outName, err := extractFromTar(filename, "tar.xz"); err != nil {
+			return err
+		} else {
+			srcFile = outName
+		}
+	case "tar.gz", "tgz":
+		if outName, err := extractFromTar(filename, "tar.gz"); err != nil {
+			return err
+		} else {
+			srcFile = outName
+		}
 	case "none", "":
 		// Infer by extension if not explicitly specified
-		switch ext := path.Ext(filename); ext {
-		case ".xz":
+		l := strings.ToLower(filename)
+		switch {
+		case strings.HasSuffix(l, ".tar.xz") || strings.HasSuffix(l, ".txz"):
+			if outName, err := extractFromTar(filename, "tar.xz"); err != nil {
+				return err
+			} else {
+				srcFile = outName
+			}
+		case strings.HasSuffix(l, ".tar.gz") || strings.HasSuffix(l, ".tgz"):
+			if outName, err := extractFromTar(filename, "tar.gz"); err != nil {
+				return err
+			} else {
+				srcFile = outName
+			}
+		case strings.HasSuffix(l, ".xz"):
 			if outName, err := decompressXZ(filename); err != nil {
 				return err
 			} else {
 				srcFile = outName
 			}
-		case ".gz":
+		case strings.HasSuffix(l, ".gz"):
 			if outName, err := decompressGZ(filename); err != nil {
 				return err
 			} else {
@@ -294,14 +440,27 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		}
 	default:
 		zap.S().Warnf("Unknown compression value %q; attempting to infer by extension", comp)
-		switch ext := path.Ext(filename); ext {
-		case ".xz":
+		l := strings.ToLower(filename)
+		switch {
+		case strings.HasSuffix(l, ".tar.xz") || strings.HasSuffix(l, ".txz"):
+			if outName, err := extractFromTar(filename, "tar.xz"); err != nil {
+				return err
+			} else {
+				srcFile = outName
+			}
+		case strings.HasSuffix(l, ".tar.gz") || strings.HasSuffix(l, ".tgz"):
+			if outName, err := extractFromTar(filename, "tar.gz"); err != nil {
+				return err
+			} else {
+				srcFile = outName
+			}
+		case strings.HasSuffix(l, ".xz"):
 			if outName, err := decompressXZ(filename); err != nil {
 				return err
 			} else {
 				srcFile = outName
 			}
-		case ".gz":
+		case strings.HasSuffix(l, ".gz"):
 			if outName, err := decompressGZ(filename); err != nil {
 				return err
 			} else {
@@ -334,6 +493,17 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 			return fmt.Errorf("unable to detect image format for %s", srcFile)
 		}
 		zap.S().Infow("Detected source format", "format", format, "file", srcFile)
+		if f, err := os.Open(srcFile); err == nil {
+			h := sha256.New()
+			if _, err := io.Copy(h, f); err == nil {
+				zap.S().Infow("SHA256 (source file)", "file", srcFile, "sha256", fmt.Sprintf("%x", h.Sum(nil)))
+			} else {
+				zap.S().Warnw("Failed to compute SHA256 for source file", "file", srcFile, "error", err)
+			}
+			_ = f.Close()
+		} else {
+			zap.S().Warnw("Failed to open source file for hashing", "file", srcFile, "error", err)
+		}
 	}
 
 	// Step 3: Convert to raw if needed
@@ -341,6 +511,17 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 	zap.S().Debugw("Beginning conversion decision", "detected_format", format, "file", srcFile)
 	if format == "raw" {
 		zap.S().Infow("Input image is already in raw format; skipping conversion", "file", srcFile)
+		if f, err := os.Open(srcFile); err == nil {
+			h := sha256.New()
+			if _, err := io.Copy(h, f); err == nil {
+				zap.S().Infow("SHA256 (raw file)", "file", srcFile, "sha256", fmt.Sprintf("%x", h.Sum(nil)))
+			} else {
+				zap.S().Warnw("Failed to compute SHA256 for raw file", "file", srcFile, "error", err)
+			}
+			_ = f.Close()
+		} else {
+			zap.S().Warnw("Failed to open raw file for hashing", "file", srcFile, "error", err)
+		}
 		rawFile = srcFile
 	} else {
 		rawFile = fmt.Sprintf("%s.raw", srcFile)
@@ -351,6 +532,17 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 			return err
 		}
 		zap.S().Infow("Conversion complete", "output", rawFile)
+		if f, err := os.Open(rawFile); err == nil {
+			h := sha256.New()
+			if _, err := io.Copy(h, f); err == nil {
+				zap.S().Infow("SHA256 (raw file)", "file", rawFile, "sha256", fmt.Sprintf("%x", h.Sum(nil)))
+			} else {
+				zap.S().Warnw("Failed to compute SHA256 for raw file", "file", rawFile, "error", err)
+			}
+			_ = f.Close()
+		} else {
+			zap.S().Warnw("Failed to open raw file for hashing", "file", rawFile, "error", err)
+		}
 	}
 
 	// Determine the image visibility

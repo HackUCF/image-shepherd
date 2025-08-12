@@ -1,30 +1,74 @@
-name: Releases
+name: Release
 on:
   push:
     tags:
       - v*
 
+permissions:
+  contents: write
+  packages: read
+
 jobs:
-  new-release:
+  release:
     name: Create release from tag
     runs-on: ubuntu-latest
-    container:
-      image: golang:1.16
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Install GitHub CLI and zip
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Get tag version
+        id: get_version
         run: |
-          git clone https://github.com/cli/cli.git
-          cd cli
-          make install
-          apt-get update && apt-get install -y zip
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Run tests
+        run: make test
+
       - name: Build distributable artifacts
         run: make dist
-      - name: Create release for tag
+
+      - name: Generate changelog
+        id: changelog
         run: |
-          HEAD_SHA=$(git show-ref --head | grep HEAD | cut -d ' ' -f 1)
-          # Get the tag from ref/tag/vX.Y.Z
-          TAG=$(git show-ref | grep ${HEAD_SHA} | grep ' refs/tags/' | cut -d ' ' -f 2 | cut -d '/' -f 3 | sed -e 's/^v//')
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-          gh release create --title "${TAG} - $(date +%d-%b-%Y)" v${TAG} ./build/*.zip
+          if [ -f CHANGELOG.md ]; then
+            # Extract changelog for this version
+            awk '/^## \[${{ steps.get_version.outputs.version }}\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md > release_notes.md
+            if [ ! -s release_notes.md ]; then
+              echo "Release ${{ steps.get_version.outputs.version }}" > release_notes.md
+            fi
+          else
+            echo "Release ${{ steps.get_version.outputs.version }}" > release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.get_version.outputs.version }}
+          body_path: release_notes.md
+          files: |
+            build/*.zip
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ steps.get_version.outputs.version }}
+          path: build/*.zip
+          retention-days: 90
