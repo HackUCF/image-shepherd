@@ -10,7 +10,9 @@ import (
 )
 
 type Config struct {
-	Images []image.Image
+	Images           []image.Image
+	OwnerProjectID   string `yaml:"owner_project_id,omitempty"`
+	RequireProtected bool   `yaml:"require_protected,omitempty"`
 }
 
 func Load(path string) Config {
