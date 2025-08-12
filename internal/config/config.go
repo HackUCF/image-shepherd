@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -16,7 +16,7 @@ type Config struct {
 }
 
 func Load(path string) Config {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		zap.S().Fatalf("Failed to read config file: %s", err)
 	}
