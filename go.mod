@@ -1,4 +1,4 @@
-module github.com/s-newman/image-shepherd
+module github.com/HackUCF/image-shepherd
 
 go 1.23.0
 

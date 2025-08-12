@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/HackUCF/image-shepherd/internal/client"
+	"github.com/HackUCF/image-shepherd/internal/config"
+	"github.com/HackUCF/image-shepherd/pkg/shepherd"
 	"github.com/gophercloud/gophercloud/v2"
-	"github.com/s-newman/image-shepherd/internal/client"
-	"github.com/s-newman/image-shepherd/internal/config"
-	"github.com/s-newman/image-shepherd/pkg/shepherd"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

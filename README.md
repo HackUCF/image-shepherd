@@ -13,13 +13,13 @@ If Image Shepherd finds an image that's already named the same as the image you 
 Image Shepherd is available as a docker container.
 
 ```shell
-docker pull ghcr.io/s-newman/image-shepherd/image-shepherd:latest
+docker pull ghcr.io/HackUCF/image-shepherd/image-shepherd:latest
 ```
 
 Precompiled binaries for Linux, Windows, and Mac are available to download from GitHub.
 
 ```shell
-curl -O image-shepherd.zip https://github.com/s-newman/image-shepherd/image-shepherd/releases/latest/download/image-shepherd-linux-amd64.zip
+curl -O image-shepherd.zip https://github.com/HackUCF/image-shepherd/image-shepherd/releases/latest/download/image-shepherd-linux-amd64.zip
 unzip image-shepherd.zip
 ./image-shepherd -h
 ```
@@ -27,7 +27,7 @@ unzip image-shepherd.zip
 You can also build the binary from source using `go`.
 
 ```shell
-go get https://github.com/s-newman/image-shepherd/cmd/image-shepherd
+go get https://github.com/HackUCF/image-shepherd/cmd/image-shepherd
 ./image-shepherd -h
 ```
 
@@ -36,7 +36,7 @@ go get https://github.com/s-newman/image-shepherd/cmd/image-shepherd
 The easiest way to get up and running with Image Shepherd is with a Docker container.
 
 ```shell
-docker run -v $PWD/clouds.yaml:/opt/image-shepherd/clouds.yaml -v $PWD/images.yaml:/opt/image-shepherd/images.yaml ghcr.io/s-newman/image-shepherd/image-shepherd:latest
+docker run -v $PWD/clouds.yaml:/opt/image-shepherd/clouds.yaml -v $PWD/images.yaml:/opt/image-shepherd/images.yaml ghcr.io/HackUCF/image-shepherd/image-shepherd:latest
 ```
 
 ## Usage
@@ -97,7 +97,7 @@ images:
 
     # Whether to make the image publicly accessible by other projects (optional, default false)
     public: true
-  
+
     # A list of tags to add to the image (optional)
     tags:
       - official

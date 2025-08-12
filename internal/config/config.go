@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	"github.com/s-newman/image-shepherd/pkg/image"
+	"github.com/HackUCF/image-shepherd/pkg/image"
 )
 
 type Config struct {

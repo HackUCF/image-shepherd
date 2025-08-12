@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HackUCF/image-shepherd/pkg/image"
 	"github.com/gophercloud/gophercloud/v2"
 	"github.com/gophercloud/gophercloud/v2/openstack/image/v2/images"
-	"github.com/s-newman/image-shepherd/pkg/image"
 	"go.uber.org/zap"
 )
 
