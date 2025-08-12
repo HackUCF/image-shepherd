@@ -21,7 +21,8 @@ var verbose = flag.Bool("verbose", false, "Include extra information in each log
 var ownerProjectID = flag.String("owner-project-id", "", "Project ID owner that matched current image must have")
 var requireProtected = flag.Bool("require-protected", false, "Require matched current image to be protected")
 var requirePublic = flag.Bool("require-public", false, "Require matched current image to be public")
-var uploadTimeout = flag.Int("upload-timeout", 6000, "Timeout for image upload in seconds")
+var uploadTimeout = flag.Int("upload-timeout", 600, "Timeout for image upload in seconds")
+var downloadTimeout = flag.Int("download-timeout", 600, "Timeout for image download in seconds")
 
 func initLogging() {
 	z := zap.NewDevelopmentConfig()
@@ -54,10 +55,10 @@ func main() {
 	flag.Parse()
 
 	// Early startup message so users see something even at default (warn) log level
-	fmt.Printf("Starting image-shepherd\n  config: %s\n  cloud: %s\n  verbose: %t\n  no-color: %t\n  owner-project-id: %s\n  require-protected: %t\n  require-public: %t\n  upload-timeout: %ds\n", *configFile, *cloudName, *verbose, *noColor, *ownerProjectID, *requireProtected, *requirePublic, *uploadTimeout)
+	fmt.Printf("Starting image-shepherd\n  config: %s\n  cloud: %s\n  verbose: %t\n  no-color: %t\n  owner-project-id: %s\n  require-protected: %t\n  require-public: %t\n  upload-timeout: %ds\n  download-timeout: %ds\n", *configFile, *cloudName, *verbose, *noColor, *ownerProjectID, *requireProtected, *requirePublic, *uploadTimeout, *downloadTimeout)
 
 	initLogging()
-	zap.S().Infow("Startup configuration", "config", *configFile, "cloud", *cloudName, "verbose", *verbose, "no_color", *noColor, "owner_project_id", *ownerProjectID, "require_protected", *requireProtected, "require_public", *requirePublic, "upload_timeout_secs", *uploadTimeout)
+	zap.S().Infow("Startup configuration", "config", *configFile, "cloud", *cloudName, "verbose", *verbose, "no_color", *noColor, "owner_project_id", *ownerProjectID, "require_protected", *requireProtected, "require_public", *requirePublic, "upload_timeout_secs", *uploadTimeout, "download_timeout_secs", *downloadTimeout)
 
 	c := config.Load(*configFile)
 	zap.S().Infow("Loaded images configuration", "path", *configFile, "image_count", len(c.Images))
@@ -81,9 +82,11 @@ func main() {
 		_ = os.Setenv("IMAGE_SHEPHERD_REQUIRE_PUBLIC", "false")
 	}
 
-	// Propagate upload timeout to environment for downstream components
+	// Propagate upload and download timeouts to environment for downstream components
 	_ = os.Setenv("IMAGE_SHEPHERD_UPLOAD_TIMEOUT_SECS", strconv.Itoa(*uploadTimeout))
+	_ = os.Setenv("IMAGE_SHEPHERD_DOWNLOAD_TIMEOUT_SECS", strconv.Itoa(*downloadTimeout))
 	zap.S().Infow("Applied upload timeout", "upload_timeout_secs", *uploadTimeout)
+	zap.S().Infow("Applied download timeout", "download_timeout_secs", *downloadTimeout)
 
 	if !*verbose {
 		zap.S().Warnw("Starting shepherd run", "image_count", len(c.Images), "hint", "use -verbose for detailed logs")

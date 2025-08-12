@@ -94,56 +94,122 @@ func (i Image) Init() {
 
 // downloadToCwd downloads the URL to the current working directory and returns the filename.
 func downloadToCwd(srcURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", srcURL, nil)
-	if err != nil {
-		return "", err
-	}
-
-	client := &http.Client{Timeout: 120 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return "", fmt.Errorf("download failed: %s", resp.Status)
-	}
-
-	// Prefer filename from Content-Disposition if present
-	filename := ""
-	if cd := resp.Header.Get("Content-Disposition"); cd != "" {
-		if _, params, err := mime.ParseMediaType(cd); err == nil {
-			if fn, ok := params["filename"]; ok && fn != "" {
-				filename = fn
-			}
+	// Resolve configurable timeout (seconds) from environment, default 300s
+	timeoutSecs := 300
+	if v := os.Getenv("IMAGE_SHEPHERD_DOWNLOAD_TIMEOUT_SECS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			timeoutSecs = n
 		}
 	}
 
-	// Fallback: use the basename from the final request URL path
-	if filename == "" && resp.Request != nil && resp.Request.URL != nil {
-		filename = path.Base(resp.Request.URL.Path)
-	}
-	if filename == "" || filename == "." || filename == "/" {
-		filename = "downloaded-image"
+	// HTTP client with timeout (per-attempt)
+	client := &http.Client{Timeout: time.Duration(timeoutSecs) * time.Second}
+
+	maxAttempts := 3
+	backoff := 2 * time.Second
+
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		// Context deadline for this attempt
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
+		req, err := http.NewRequestWithContext(ctx, "GET", srcURL, nil)
+		if err != nil {
+			cancel()
+			return "", err
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			cancel()
+			lastErr = err
+			if attempt < maxAttempts {
+				time.Sleep(backoff)
+				backoff *= 2
+				continue
+			}
+			return "", lastErr
+		}
+
+		// Ensure response body closed for each attempt
+		func() {
+			defer resp.Body.Close()
+			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+				lastErr = fmt.Errorf("download failed: %s", resp.Status)
+				return
+			}
+
+			// Prefer filename from Content-Disposition if present
+			filename := ""
+			if cd := resp.Header.Get("Content-Disposition"); cd != "" {
+				if _, params, err := mime.ParseMediaType(cd); err == nil {
+					if fn, ok := params["filename"]; ok && fn != "" {
+						filename = fn
+					}
+				}
+			}
+
+			// Fallback: use the basename from the final request URL path
+			if filename == "" && resp.Request != nil && resp.Request.URL != nil {
+				filename = path.Base(resp.Request.URL.Path)
+			}
+			if filename == "" || filename == "." || filename == "/" {
+				filename = "downloaded-image"
+			}
+
+			// Sanitize to avoid path traversal
+			filename = filepath.Base(filename)
+
+			out, err := os.Create(filename)
+			if err != nil {
+				lastErr = err
+				return
+			}
+			defer func() {
+				_ = out.Close()
+				// On error, remove the partial file
+				if lastErr != nil {
+					_ = os.Remove(filename)
+				}
+			}()
+
+			if _, err := io.Copy(out, resp.Body); err != nil {
+				lastErr = err
+				return
+			}
+
+			// Success: clear context cancel and set lastErr nil
+			lastErr = nil
+			// Return filename via outer scope by replacing function return using panic/defer is messy;
+			// instead, shadow the function return by writing to a named variable.
+			// To keep minimal changes, we capture via a closure result.
+			// We'll assign to a package-local variable via named return not available here,
+			// so set a sentinel by writing to a temporary file and re-opening after loop.
+			// Simpler: reuse filename by setting it on the request context (not ideal).
+			// Instead, set lastErr to a sentinel nil and write filename to header for retrieval outside.
+			req.Header.Set("X-Image-Shepherd-Filename", filename)
+		}()
+
+		// Capture filename if success
+		if lastErr == nil {
+			// Retrieve filename from the request header (set above)
+			fn := req.Header.Get("X-Image-Shepherd-Filename")
+			cancel()
+			return fn, nil
+		}
+
+		cancel()
+		// Retry on next loop if attempts remain
+		if attempt < maxAttempts {
+			time.Sleep(backoff)
+			backoff *= 2
+			continue
+		}
 	}
 
-	// Sanitize to avoid path traversal
-	filename = filepath.Base(filename)
-
-	out, err := os.Create(filename)
-	if err != nil {
-		return "", err
+	if lastErr == nil {
+		lastErr = fmt.Errorf("download failed: unknown error")
 	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		return "", err
-	}
-
-	return filename, nil
+	return "", lastErr
 }
 
 func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {

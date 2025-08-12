@@ -6,7 +6,7 @@
 !/build/.gitkeep
 
 # Config files
-*.yaml
+
 
 # Images
 *.img
