@@ -25,7 +25,19 @@ images:
       os_admin_user: ubuntu
     source_format: qcow2
     compression: none
-
+  - name: Fedora Server 43
+    protected: true
+    url: https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-AmazonEC2-43-1.6.x86_64.raw.xz
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: fedora
+      os_version: "43"
+      os_type: linux
+      os_admin_user: fedora
+    source_format: raw
+    compression: xz
   - name: Fedora Server 42
     protected: true
     url: https://mirror.umd.edu/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-AmazonEC2-42-1.1.x86_64.raw.xz
@@ -158,6 +170,19 @@ images:
       os_admin_user: root
     source_format: qcow2
     compression: none
+  - name: Fedora CoreOS 43
+    protected: true
+    url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/42.20251012.3.0/x86_64/fedora-coreos-42.20251012.3.0-metal.x86_64.raw.xz
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: coreos
+      os_version: "43"
+      os_type: linux
+      os_admin_user: coreos
+    source_format: raw
+    compression: xz
   - name: Fedora CoreOS 42
     protected: true
     url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/42.20250721.3.0/x86_64/fedora-coreos-42.20250721.3.0-metal.x86_64.raw.xz
@@ -167,6 +192,19 @@ images:
     properties:
       os_distro: coreos
       os_version: "42"
+      os_type: linux
+      os_admin_user: coreos
+    source_format: raw
+    compression: xz
+  - name: Centos CoreOS 10
+    protected: true
+    url: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/scos-10.0.20250628-0-metal.x86_64.raw.gz
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: scos
+      os_version: "10"
       os_type: linux
       os_admin_user: coreos
     source_format: raw
