@@ -208,7 +208,7 @@ images:
       os_type: linux
       os_admin_user: coreos
     source_format: raw
-    compression: xz
+    compression: gz
   - name: Arch Linux
     protected: true
     url: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
