@@ -172,7 +172,7 @@ images:
     compression: none
   - name: Fedora CoreOS 43
     protected: true
-    url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/42.20251012.3.0/x86_64/fedora-coreos-42.20251012.3.0-metal.x86_64.raw.xz
+    url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/42.20251012.3.0/x86_64/fedora-coreos-42.20251012.3.0-openstack.x86_64.qcow2.xz
     public: true
     tags:
       - official
@@ -181,7 +181,7 @@ images:
       os_version: "43"
       os_type: linux
       os_admin_user: coreos
-    source_format: raw
+    source_format: qcow2
     compression: xz
   - name: Fedora CoreOS 42
     protected: true
@@ -198,7 +198,7 @@ images:
     compression: xz
   - name: Centos CoreOS 10
     protected: true
-    url: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/scos-10.0.20250628-0-metal.x86_64.raw.gz
+    url: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/scos-10.0.20250628-0-openstack.x86_64.qcow2.gz
     public: true
     tags:
       - official
@@ -207,7 +207,7 @@ images:
       os_version: "10"
       os_type: linux
       os_admin_user: coreos
-    source_format: raw
+    source_format: qcow2
     compression: gz
   - name: Arch Linux
     protected: true
