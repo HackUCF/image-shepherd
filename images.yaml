@@ -196,6 +196,19 @@ images:
       os_admin_user: coreos
     source_format: qcow2
     compression: gz
+  - name: Alpine 3.23
+    protected: true
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/nocloud_alpine-3.23.3-x86_64-uefi-cloudinit-r0.qcow2
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: alpine
+      os_version: "3.23"
+      os_type: linux
+      os_admin_user: alpine
+    source_format: qcow2
+    compression: none
   - name: Arch Linux
     protected: true
     url: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
