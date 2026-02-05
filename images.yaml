@@ -278,4 +278,17 @@ images:
       os_admin_user: root
     source_format: raw
     compression: tar.xz
-  
+  - name: FreeBSD 15.0
+    protected: true
+    url: https://download.freebsd.org/ftp/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-BASIC-CLOUDINIT-ufs.raw.xz
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: freebsd
+      hw_firmware_type: uefi
+      os_version: "15.0"
+      os_type: bsd
+      os_admin_user: root
+    source_format: raw
+    compression: xz
