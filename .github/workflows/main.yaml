@@ -10,19 +10,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: '1.23'
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            qemu-utils \
-            ca-certificates \
-            xz-utils tar
-      - name: Create clouds.yaml from secret
-        run: |
-          echo "${{ secrets.CLOUDS_YAML }}" > clouds.yaml
-          chmod 600 clouds.yaml
-      - name: Run image-shephard
-        run: go run cmd/image-shepherd/shepherd.go
+      
+      - name: Run Docker
+        run: docker run -v $PWD/clouds.yaml:/opt/image-shepherd/clouds.yaml -v $PWD/images.yaml:/opt/image-shepherd/images.yaml ghcr.io/HackUCF/image-shepherd/image-shepherd:latest
