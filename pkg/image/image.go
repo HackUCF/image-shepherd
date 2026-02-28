@@ -221,6 +221,13 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		zap.S().Errorw("Download failed", "url", i.Url, "image", i.Name, "error", err)
 		return err
 	}
+	defer func() {
+		zap.S().Infow("Cleaning up downloaded file", "file", filename)
+		if err := os.Remove(filename); err != nil && !os.IsNotExist(err) {
+			zap.S().Warnw("Failed to remove downloaded file", "file", filename, "error", err)
+		}
+	}()
+
 	zap.S().Infow("Download completed", "file", filename, "image", i.Name)
 	if f, err := os.Open(filename); err == nil {
 		h := sha256.New()
@@ -239,6 +246,17 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 
 	// Step 1: Decompress if instructed or inferred
 	srcFile := filename
+	// If srcFile changes (due to decompression), we should ensure it gets cleaned up too.
+	// We track it so we can clean it up if it differs from filename (which is already deferred).
+	defer func() {
+		if srcFile != filename {
+			zap.S().Infow("Cleaning up decompressed source file", "file", srcFile)
+			if err := os.Remove(srcFile); err != nil && !os.IsNotExist(err) {
+				zap.S().Warnw("Failed to remove decompressed source file", "file", srcFile, "error", err)
+			}
+		}
+	}()
+
 	comp := strings.ToLower(strings.TrimSpace(i.Compression))
 	decompressXZ := func(in string) (string, error) {
 		zap.S().Infof("Decompressing xz image %s", in)
@@ -508,6 +526,16 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 
 	// Step 3: Convert to raw if needed
 	var rawFile string
+	// If rawFile is created as a result of conversion, we need to clean it up.
+	defer func() {
+		if rawFile != "" && rawFile != srcFile {
+			zap.S().Infow("Cleaning up converted raw file", "file", rawFile)
+			if err := os.Remove(rawFile); err != nil && !os.IsNotExist(err) {
+				zap.S().Warnw("Failed to remove converted raw file", "file", rawFile, "error", err)
+			}
+		}
+	}()
+
 	zap.S().Debugw("Beginning conversion decision", "detected_format", format, "file", srcFile)
 	if format == "raw" {
 		zap.S().Infow("Input image is already in raw format; skipping conversion", "file", srcFile)

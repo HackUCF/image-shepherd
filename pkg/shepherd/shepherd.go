@@ -71,6 +71,21 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 			if ex.Hidden {
 				continue
 			}
+
+			// Explicitly exclude snapshots and backups to avoid managing user artifacts
+			if imgType, ok := ex.Properties["image_type"].(string); ok {
+				if strings.EqualFold(imgType, "snapshot") || strings.EqualFold(imgType, "backup") {
+					zap.S().Debugw("Skipping candidate identified as snapshot/backup", "id", ex.ID, "image_type", imgType)
+					continue
+				}
+			}
+			if bdm, ok := ex.Properties["block_device_mapping"].(string); ok {
+				if strings.Contains(bdm, `"source_type": "snapshot"`) || strings.Contains(bdm, `"source_type": "backup"`) {
+					zap.S().Debugw("Skipping candidate identified as snapshot/backup via block_device_mapping", "id", ex.ID)
+					continue
+				}
+			}
+
 			match := false
 			if hasDistro && hasVersion && hasType &&
 				wantDistro != "" && wantVersion != "" && wantType != "" {
@@ -127,6 +142,9 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 
 		if err := imgCfg.Upload(c, meta); err != nil {
 			zap.S().Errorw("Upload failed", "name", imgCfg.Name, "error", err)
+			if strings.Contains(err.Error(), "no space left on device") {
+				zap.S().Fatal("Exiting due to no space left on device")
+			}
 		} else {
 			zap.S().Infow("Upload complete", "name", imgCfg.Name)
 			if current != nil {
