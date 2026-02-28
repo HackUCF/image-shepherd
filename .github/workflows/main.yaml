@@ -13,6 +13,6 @@ jobs:
       - name: Create clouds.yaml from secret
         run: |
           echo "${{ secrets.CLOUDS_YAML }}" > clouds.yaml
-          chmod 600 clouds.yaml
+          chmod 644 clouds.yaml
       - name: Run Docker
         run: docker run -v $PWD/clouds.yaml:/opt/image-shepherd/clouds.yaml -v $PWD/images.yaml:/opt/image-shepherd/images.yaml ghcr.io/hackucf/image-shepherd
