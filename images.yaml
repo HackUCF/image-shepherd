@@ -301,7 +301,7 @@ images:
       os_distro: freebsd
       hw_firmware_type: uefi
       os_version: "15.0"
-      os_type: bsd
+      os_type: linux
       os_admin_user: root
     source_format: raw
     compression: xz
