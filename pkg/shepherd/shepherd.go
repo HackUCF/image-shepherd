@@ -56,7 +56,7 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 		}
 
 		// Find current "latest" image matching either properties or name (non-hidden)
-		var current *images.Image
+		var allImages []*images.Image
 		wantDistro, hasDistro := imgCfg.Properties["os_distro"]
 		wantVersion, hasVersion := imgCfg.Properties["os_version"]
 		wantType, hasType := imgCfg.Properties["os_type"]
@@ -109,8 +109,12 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 					zap.S().Debugw("Skipping candidate due to visibility mismatch", "id", ex.ID, "visibility", ex.Visibility)
 					continue
 				}
-				current = ex
-				break
+
+				allImages = append(allImages, ex)
+
+				if current == nil{
+					current = ex	
+				}
 			}
 		}
 
@@ -147,13 +151,16 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 			}
 		} else {
 			zap.S().Infow("Upload complete", "name", imgCfg.Name)
-			if current != nil {
-				zap.S().Infow("Renaming/hiding previous image", "previous_id", current.ID, "previous_name", current.Name)
-				if err := image.RenameHideByID(c, current.ID); err != nil {
-					zap.S().Errorw("Failed to rename/hide previous image", "id", current.ID, "error", err)
-				} else {
-					zap.S().Infow("Previous image renamed/hidden", "id", current.ID)
+			if len(allImages) > 0{
+				for _, old := range allImages{
+					zap.S().Infow("Renaming/hiding previous image", "previous_id", old.ID, "previous_name", old.Name)
+					if err := image.RenameHideByID(c, old.ID); err != nil {
+						zap.S().Errorw("Failed to rename/hide previous image", "id", old.ID, "error", err)
+					} else {
+						zap.S().Infow("Previous image renamed/hidden", "id", old.ID)
+					}
 				}
+			}
 			} else {
 				zap.S().Infow("No previous image to rename/hide")
 			}
