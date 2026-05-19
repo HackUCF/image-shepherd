@@ -57,6 +57,8 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 
 		// Find current "latest" image matching either properties or name (non-hidden)
 		var allImages []*images.Image
+		var current *images.Image
+	
 		wantDistro, hasDistro := imgCfg.Properties["os_distro"]
 		wantVersion, hasVersion := imgCfg.Properties["os_version"]
 		wantType, hasType := imgCfg.Properties["os_type"]
