@@ -160,7 +160,6 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 						zap.S().Infow("Previous image renamed/hidden", "id", old.ID)
 					}
 				}
-			}
 			} else {
 				zap.S().Infow("No previous image to rename/hide")
 			}
