@@ -46,7 +46,7 @@ func FetchSourceMeta(srcURL string) (SourceMeta, error) {
 	if err != nil {
 		return SourceMeta{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 399 {
 		return SourceMeta{}, fmt.Errorf("HEAD %s failed: %s", srcURL, resp.Status)
@@ -133,7 +133,7 @@ func downloadToCwd(srcURL string) (string, error) {
 
 		// Ensure response body closed for each attempt
 		func() {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
 				lastErr = fmt.Errorf("download failed: %s", resp.Status)
 				return
@@ -265,7 +265,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		if err != nil {
 			return "", err
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 		cmd := exec.Command("xz", "-dc", in)
 		cmd.Stdout = out
 		cmd.Stderr = os.Stderr
@@ -282,7 +282,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		if err != nil {
 			return "", err
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 
 		cmd := exec.Command("gzip", "-dc", in)
 		cmd.Stdout = out
@@ -618,7 +618,7 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 	if err != nil {
 		return err
 	}
-	defer data.Close()
+	defer func() { _ = data.Close() }()
 
 	zap.S().Infow("Uploading image data", "id", res.ID, "file", rawFile)
 	// Use context with timeout for image data upload

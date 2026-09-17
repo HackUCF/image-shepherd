@@ -9,7 +9,6 @@ import (
 	"github.com/HackUCF/image-shepherd/internal/client"
 	"github.com/HackUCF/image-shepherd/internal/config"
 	"github.com/HackUCF/image-shepherd/pkg/shepherd"
-	"github.com/gophercloud/gophercloud/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -63,7 +62,7 @@ func main() {
 	c := config.Load(*configFile)
 	zap.S().Infow("Loaded images configuration", "path", *configFile, "image_count", len(c.Images))
 
-	var sc *gophercloud.ServiceClient = client.New(*cloudName)
+	sc := client.New(*cloudName)
 	zap.S().Infow("OpenStack client initialized", "service", "image", "cloud", *cloudName)
 	if *ownerProjectID != "" {
 		_ = os.Setenv("IMAGE_SHEPHERD_OWNER_PROJECT_ID", *ownerProjectID)
