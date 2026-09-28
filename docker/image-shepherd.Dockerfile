@@ -18,7 +18,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 
 # -----------------------------------------------------------------------------
 # Runtime stage
-FROM ubuntu:24.04 AS runtime
+FROM ubuntu:26.04 AS runtime
 
 # Create non-root user
 RUN groupadd -r shepherd && useradd -r -g shepherd shepherd
