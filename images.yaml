@@ -38,6 +38,19 @@ images:
       os_admin_user: ubuntu
     source_format: qcow2
     compression: none
+  - name: Fedora Server 44
+    protected: true
+    url: https://download.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/Fedora-Cloud-Base-AmazonEC2-44-1.7.x86_64.raw.xz
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: fedora
+      os_version: "44"
+      os_type: linux
+      os_admin_user: fedora
+    source_format: raw
+    compression: xz
   - name: Fedora Server 43
     protected: true
     url: https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-AmazonEC2-43-1.6.x86_64.raw.xz
@@ -53,7 +66,7 @@ images:
     compression: xz
   - name: Fedora Server 42
     protected: true
-    url: https://mirror.umd.edu/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-AmazonEC2-42-1.1.x86_64.raw.xz
+    url: https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-AmazonEC2-42-1.1.x86_64.raw.xz
     public: true
     tags:
       - official
@@ -196,9 +209,22 @@ images:
       os_admin_user: coreos
     source_format: qcow2
     compression: xz
+  - name: Fedora CoreOS 44
+    protected: true
+    url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/44.20260913.3.2/x86_64/fedora-coreos-44.20260913.3.2-openstack.x86_64.qcow2.xz
+    public: true
+    tags:
+      - official
+    properties:
+      os_distro: coreos
+      os_version: "44"
+      os_type: linux
+      os_admin_user: coreos
+    source_format: qcow2
+    compression: xz
   - name: Fedora CoreOS 43
     protected: true
-    url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/43.20260217.3.1/x86_64/fedora-coreos-43.20260217.3.1-openstack.x86_64.qcow2.xz
+    url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/43.20260413.3.2/x86_64/fedora-coreos-43.20260413.3.2-openstack.x86_64.qcow2.xz
     public: true
     tags:
       - official
@@ -211,7 +237,7 @@ images:
     compression: xz
   - name: Centos CoreOS 10
     protected: true
-    url: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/scos-10.0.20250628-0-openstack.x86_64.qcow2.gz
+    url: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/scos-10.0.20251103-0-openstack.x86_64.qcow2.gz
     public: true
     tags:
       - official
@@ -222,9 +248,23 @@ images:
       os_admin_user: coreos
     source_format: qcow2
     compression: gz
+  - name: Alpine 3.24
+    protected: true
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-uefi-cloudinit-r0.qcow2
+    public: true
+    tags:
+      - official
+    properties:
+      hw_firmware_type: uefi
+      os_distro: alpine
+      os_version: "3.24"
+      os_type: linux
+      os_admin_user: alpine
+    source_format: qcow2
+    compression: none
   - name: Alpine 3.23
     protected: true
-    url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/generic_alpine-3.23.3-x86_64-uefi-cloudinit-r0.qcow2
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/generic_alpine-3.23.5-x86_64-uefi-cloudinit-r0.qcow2
     public: true
     tags:
       - official
@@ -238,7 +278,7 @@ images:
     compression: none
   - name: Alpine 3.22
     protected: true
-    url: https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.3-x86_64-uefi-cloudinit-r0.qcow2
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.5-x86_64-uefi-cloudinit-r0.qcow2
     public: true
     tags:
       - official
@@ -252,7 +292,7 @@ images:
     compression: none
   - name: Alpine 3.21
     protected: true
-    url: https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.6-x86_64-uefi-cloudinit-r0.qcow2
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.7-x86_64-uefi-cloudinit-r0.qcow2
     public: true
     tags:
       - official
@@ -266,7 +306,7 @@ images:
     compression: none
   - name: Alpine 3.20
     protected: true
-    url: https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.9-x86_64-uefi-cloudinit-r0.qcow2
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.10-x86_64-uefi-cloudinit-r0.qcow2
     public: true
     tags:
       - official
@@ -291,15 +331,15 @@ images:
       os_admin_user: arch
     source_format: qcow2
     compression: none
-  - name: Kali 2025.2
+  - name: Kali 2026.2
     protected: true
-    url: https://kali.download/cloud-images/kali-2025.2/kali-linux-2025.2-cloud-genericcloud-amd64.tar.xz
+    url: https://kali.download/cloud-images/kali-2026.2/kali-linux-2026.2-cloud-genericcloud-amd64.tar.xz
     public: true
     tags:
       - official
     properties:
       os_distro: kali
-      os_version: "2025.2"
+      os_version: "2026.2"
       os_type: linux
       os_admin_user: root
     source_format: raw
