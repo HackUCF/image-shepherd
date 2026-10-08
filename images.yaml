@@ -199,6 +199,10 @@ images:
   - name: Fedora CoreOS 42
     protected: true
     url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/42.20251012.3.0/x86_64/fedora-coreos-42.20251012.3.0-openstack.x86_64.qcow2.xz
+    discover:
+      index: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/builds.json
+      match: '"id":\s*"(42\.\d+\.\d+\.\d+)"'
+      url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/{version}/x86_64/fedora-coreos-{version}-openstack.x86_64.qcow2.xz
     public: true
     tags:
       - official
@@ -212,6 +216,10 @@ images:
   - name: Fedora CoreOS 44
     protected: true
     url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/44.20260913.3.2/x86_64/fedora-coreos-44.20260913.3.2-openstack.x86_64.qcow2.xz
+    discover:
+      index: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/builds.json
+      match: '"id":\s*"(44\.\d+\.\d+\.\d+)"'
+      url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/{version}/x86_64/fedora-coreos-{version}-openstack.x86_64.qcow2.xz
     public: true
     tags:
       - official
@@ -225,6 +233,10 @@ images:
   - name: Fedora CoreOS 43
     protected: true
     url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/43.20260413.3.2/x86_64/fedora-coreos-43.20260413.3.2-openstack.x86_64.qcow2.xz
+    discover:
+      index: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/builds.json
+      match: '"id":\s*"(43\.\d+\.\d+\.\d+)"'
+      url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/{version}/x86_64/fedora-coreos-{version}-openstack.x86_64.qcow2.xz
     public: true
     tags:
       - official
@@ -238,6 +250,9 @@ images:
   - name: Centos CoreOS 10
     protected: true
     url: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/scos-10.0.20251103-0-openstack.x86_64.qcow2.gz
+    discover:
+      index: https://cloud.centos.org/centos/scos/10/prod/streams/latest/x86_64/
+      match: 'scos-(10\.0\.\d+-\d+)-openstack\.x86_64\.qcow2\.gz'
     public: true
     tags:
       - official
@@ -251,6 +266,9 @@ images:
   - name: Alpine 3.24
     protected: true
     url: https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-uefi-cloudinit-r0.qcow2
+    discover:
+      index: https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/
+      match: 'generic_alpine-(3\.24\.\d+)-x86_64-uefi-cloudinit-r0\.qcow2'
     public: true
     tags:
       - official
@@ -265,6 +283,9 @@ images:
   - name: Alpine 3.23
     protected: true
     url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/generic_alpine-3.23.5-x86_64-uefi-cloudinit-r0.qcow2
+    discover:
+      index: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/
+      match: 'generic_alpine-(3\.23\.\d+)-x86_64-uefi-cloudinit-r0\.qcow2'
     public: true
     tags:
       - official
@@ -279,6 +300,9 @@ images:
   - name: Alpine 3.22
     protected: true
     url: https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.5-x86_64-uefi-cloudinit-r0.qcow2
+    discover:
+      index: https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/
+      match: 'generic_alpine-(3\.22\.\d+)-x86_64-uefi-cloudinit-r0\.qcow2'
     public: true
     tags:
       - official
@@ -293,6 +317,9 @@ images:
   - name: Alpine 3.21
     protected: true
     url: https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/generic_alpine-3.21.7-x86_64-uefi-cloudinit-r0.qcow2
+    discover:
+      index: https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/
+      match: 'generic_alpine-(3\.21\.\d+)-x86_64-uefi-cloudinit-r0\.qcow2'
     public: true
     tags:
       - official
@@ -307,6 +334,9 @@ images:
   - name: Alpine 3.20
     protected: true
     url: https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/generic_alpine-3.20.10-x86_64-uefi-cloudinit-r0.qcow2
+    discover:
+      index: https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/
+      match: 'generic_alpine-(3\.20\.\d+)-x86_64-uefi-cloudinit-r0\.qcow2'
     public: true
     tags:
       - official

@@ -133,6 +133,20 @@ OpenStack uses some properties to determine how to handle an image. The Glance d
 
 If your Glance service has been configured to support it, you can add custom properties to your images. This should be possible in the majority of cases; Glance allows custom properties by default.
 
+### Tracking point releases
+
+Some upstreams only publish versioned filenames, with no stable "latest" URL. Add a `discover` block and Image Shepherd will fetch `index` each run, pick the highest version captured by the first group of `match`, and use that build. Keep the major/minor fixed in the regex so an entry only follows its own point releases; add new majors as separate entries.
+
+```yaml
+images:
+  - name: Alpine 3.23
+    url: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/generic_alpine-3.23.5-x86_64-uefi-cloudinit-r0.qcow2 # fallback if discovery fails
+    discover:
+      index: https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/
+      match: 'generic_alpine-(3\.23\.\d+)-x86_64-uefi-cloudinit-r0\.qcow2'
+      # url: optional template using {version}; defaults to the full match resolved against index
+```
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
