@@ -304,16 +304,18 @@ images:
       os_admin_user: root
     source_format: raw
     compression: tar.xz
-  - name: FreeBSD 15.0
+  - name: FreeBSD 15.1
     protected: true
-    url: https://download.freebsd.org/ftp/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-BASIC-CLOUDINIT-ufs.raw.xz
+    url: https://download.freebsd.org/ftp/releases/VM-IMAGES/15.1-RELEASE/amd64/Latest/FreeBSD-15.1-RELEASE-amd64-BASIC-CLOUDINIT-ufs.raw.xz
     public: true
     tags:
       - official
     properties:
       os_distro: freebsd
       hw_firmware_type: uefi
-      os_version: "15.0"
+      # nuageinit hangs at boot without a config drive (waits on its ephemeral dhclient forever)
+      img_config_drive: mandatory
+      os_version: "15.1"
       os_type: linux
       os_admin_user: root
     source_format: raw
