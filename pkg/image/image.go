@@ -613,6 +613,15 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 	}
 	zap.S().Infow("Image object created", "id", res.ID, "name", i.Name)
 
+	// If the data never lands, the record would sit in queued state with the same name and
+	// source_etag as a good image, showing up as a duplicate and masking the next re-upload.
+	uploaded := false
+	defer func() {
+		if !uploaded && awaitSettled(c, res.ID) != images.ImageStatusActive {
+			deleteFailedImage(c, res.ID, i.Protected)
+		}
+	}()
+
 	// Upload the image data
 	data, err := os.Open(rawFile)
 	if err != nil {
@@ -628,9 +637,6 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 			timeoutSecs = n
 		}
 	}
-	ctxUpload, cancelUpload := context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
-	defer cancelUpload()
-
 	// Temporarily increase HTTP client timeout to exceed the upload context timeout,
 	// otherwise the client may abort early while awaiting headers.
 	prevTimeout := c.HTTPClient.Timeout
@@ -657,10 +663,27 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		}
 
 		zap.S().Infow("Uploading image data", "id", res.ID, "file", rawFile, "timeout_secs", timeoutSecs, "attempt", attempt, "max_attempts", maxAttempts)
+		// Fresh deadline per attempt; sharing one meant a timed-out attempt left every retry
+		// with an already-expired context.
+		ctxUpload, cancelUpload := context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
 		err = imagedata.Upload(ctxUpload, c, res.ID, data).ExtractErr()
+		cancelUpload()
 		if err == nil {
 			zap.S().Infow("Image data upload complete", "id", res.ID, "file", rawFile, "attempt", attempt)
+			uploaded = true
 			return nil
+		}
+
+		// A client-side timeout can fire while Glance is still flushing the data to the
+		// store; the image then goes active anyway. Treat that as success so the previous
+		// image still gets hidden, instead of leaving two active copies.
+		if status := awaitSettled(c, res.ID); status == images.ImageStatusActive {
+			zap.S().Warnw("Upload call failed but image became active; treating as success", "id", res.ID, "attempt", attempt, "error", err)
+			uploaded = true
+			return nil
+		} else if status != images.ImageStatusQueued {
+			zap.S().Errorw("Image data upload failed", "id", res.ID, "file", rawFile, "attempt", attempt, "status", status, "error", err)
+			return err
 		}
 
 		msg := err.Error()
@@ -684,6 +707,41 @@ func (i Image) Upload(c *gophercloud.ServiceClient, meta SourceMeta) error {
 		return err
 	}
 	return err
+}
+
+// awaitSettled polls an image until it leaves the saving/importing states (or ~15 minutes
+// pass) and returns the last observed status.
+func awaitSettled(c *gophercloud.ServiceClient, id string) images.ImageStatus {
+	var status images.ImageStatus
+	for i := 0; i < 90; i++ {
+		img, err := images.Get(context.TODO(), c, id).Extract()
+		if err != nil {
+			zap.S().Warnw("Failed to get image status after upload error", "id", id, "error", err)
+			return status
+		}
+		status = img.Status
+		if status != images.ImageStatusSaving && status != images.ImageStatusImporting {
+			return status
+		}
+		time.Sleep(10 * time.Second)
+	}
+	return status
+}
+
+// deleteFailedImage removes an image record whose data upload failed. Protected images
+// must be unprotected before Glance allows the delete.
+func deleteFailedImage(c *gophercloud.ServiceClient, id string, protected bool) {
+	zap.S().Warnw("Deleting image record left by failed upload", "id", id)
+	if protected {
+		unprotect := images.UpdateOpts{images.ReplaceImageProtected{NewProtected: false}}
+		if _, err := images.Update(context.TODO(), c, id, unprotect).Extract(); err != nil {
+			zap.S().Errorw("Failed to unprotect image left by failed upload; delete it manually", "id", id, "error", err)
+			return
+		}
+	}
+	if err := images.Delete(context.TODO(), c, id).ExtractErr(); err != nil {
+		zap.S().Errorw("Failed to delete image left by failed upload; delete it manually", "id", id, "error", err)
+	}
 }
 
 func RenameHideByID(c *gophercloud.ServiceClient, id string) error {
