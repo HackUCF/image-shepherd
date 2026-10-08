@@ -55,16 +55,19 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 			zap.S().Warnw("Could not fetch source metadata; proceeding", "url", imgCfg.Url, "image", imgCfg.Name, "error", metaErr)
 		}
 
-		// Find current "latest" image matching either properties or name (non-hidden)
+		// Collect every non-hidden image this config manages. The newest *active* one is
+		// "current"; everything else is a duplicate (an older copy, or a queued/killed
+		// leftover from a failed upload) and gets renamed/hidden.
 		var allImages []*images.Image
 		var current *images.Image
-	
+
 		wantDistro, hasDistro := imgCfg.Properties["os_distro"]
 		wantVersion, hasVersion := imgCfg.Properties["os_version"]
 		wantType, hasType := imgCfg.Properties["os_type"]
+		byProps := hasDistro && hasVersion && hasType && wantDistro != "" && wantVersion != "" && wantType != ""
 
-		if hasDistro && hasVersion && hasType && wantDistro != "" && wantVersion != "" && wantType != "" {
-			zap.S().Infow("Matching strategy: properties", "os_distro", wantDistro, "os_version", wantVersion, "os_type", wantType)
+		if byProps {
+			zap.S().Infow("Matching strategy: name or shepherd-managed properties", "name", imgCfg.Name, "os_distro", wantDistro, "os_version", wantVersion, "os_type", wantType)
 		} else {
 			zap.S().Infow("Matching strategy: name", "name", imgCfg.Name)
 		}
@@ -88,35 +91,38 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 				}
 			}
 
-			match := false
-			if hasDistro && hasVersion && hasType &&
-				wantDistro != "" && wantVersion != "" && wantType != "" {
+			// Name match catches images whose properties changed in images.yaml since upload.
+			// Property match only counts for images shepherd uploaded (source_url set), so
+			// user uploads that happen to carry the same os_* properties are left alone.
+			match := ex.Name == imgCfg.Name
+			if !match && byProps {
 				gd, _ := ex.Properties["os_distro"].(string)
 				gv, _ := ex.Properties["os_version"].(string)
 				gt, _ := ex.Properties["os_type"].(string)
-				match = (gd == wantDistro && gv == wantVersion && gt == wantType)
-			} else {
-				match = (ex.Name == imgCfg.Name)
+				su, _ := ex.Properties["source_url"].(string)
+				match = gd == wantDistro && gv == wantVersion && gt == wantType && su != ""
 			}
-			if match {
-				if ownerFilter != "" && ex.Owner != ownerFilter {
-					zap.S().Debugw("Skipping candidate due to owner mismatch", "id", ex.ID, "owner", ex.Owner, "expected_owner", ownerFilter)
-					continue
-				}
-				if requireProtected && !ex.Protected {
-					zap.S().Debugw("Skipping candidate due to protection mismatch", "id", ex.ID, "protected", ex.Protected)
-					continue
-				}
-				if requirePublic && ex.Visibility != images.ImageVisibilityPublic {
-					zap.S().Debugw("Skipping candidate due to visibility mismatch", "id", ex.ID, "visibility", ex.Visibility)
-					continue
-				}
+			if !match {
+				continue
+			}
+			if ownerFilter != "" && ex.Owner != ownerFilter {
+				zap.S().Debugw("Skipping candidate due to owner mismatch", "id", ex.ID, "owner", ex.Owner, "expected_owner", ownerFilter)
+				continue
+			}
+			if requireProtected && !ex.Protected {
+				zap.S().Debugw("Skipping candidate due to protection mismatch", "id", ex.ID, "protected", ex.Protected)
+				continue
+			}
+			if requirePublic && ex.Visibility != images.ImageVisibilityPublic {
+				zap.S().Debugw("Skipping candidate due to visibility mismatch", "id", ex.ID, "visibility", ex.Visibility)
+				continue
+			}
 
-				allImages = append(allImages, ex)
-
-				if current == nil{
-					current = ex	
-				}
+			allImages = append(allImages, ex)
+			// Only an active image can be current; a queued/killed one from a failed upload
+			// carries the same source_etag and would otherwise mask the need to re-upload.
+			if ex.Status == images.ImageStatusActive && (current == nil || ex.CreatedAt.After(current.CreatedAt)) {
+				current = ex
 			}
 		}
 
@@ -143,6 +149,15 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 
 		if unchanged {
 			zap.S().Infow("Image unchanged; skipping upload", "name", imgCfg.Name, "reason", reason, "source_etag", meta.ETag, "source_last_modified", meta.LastModified)
+			for _, dup := range allImages {
+				if dup.ID == current.ID {
+					continue
+				}
+				zap.S().Warnw("Hiding duplicate image", "name", imgCfg.Name, "id", dup.ID, "status", dup.Status, "kept_id", current.ID)
+				if err := image.RenameHideByID(c, dup.ID); err != nil {
+					zap.S().Errorw("Failed to rename/hide duplicate image", "id", dup.ID, "error", err)
+				}
+			}
 			continue
 		}
 
@@ -153,8 +168,8 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 			}
 		} else {
 			zap.S().Infow("Upload complete", "name", imgCfg.Name)
-			if len(allImages) > 0{
-				for _, old := range allImages{
+			if len(allImages) > 0 {
+				for _, old := range allImages {
 					zap.S().Infow("Renaming/hiding previous image", "previous_id", old.ID, "previous_name", old.Name)
 					if err := image.RenameHideByID(c, old.ID); err != nil {
 						zap.S().Errorw("Failed to rename/hide previous image", "id", old.ID, "error", err)
