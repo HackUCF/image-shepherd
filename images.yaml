@@ -317,6 +317,6 @@ images:
       img_config_drive: mandatory
       os_version: "15.1"
       os_type: linux
-      os_admin_user: root
+      os_admin_user: freebsd
     source_format: raw
     compression: xz
