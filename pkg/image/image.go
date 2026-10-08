@@ -77,6 +77,9 @@ type Image struct {
 	Properties   map[string]string
 	SourceFormat string `yaml:"source_format,omitempty"`
 	Compression  string `yaml:"compression,omitempty"`
+	// Discover, when set, resolves Url to the newest matching build each run.
+	// Url is kept as the fallback if discovery fails.
+	Discover *Discover `yaml:"discover,omitempty"`
 }
 
 func setDefault(properties *map[string]string, key string, value string) {

@@ -49,6 +49,19 @@ func Run(c *gophercloud.ServiceClient, imagesCfg []image.Image) {
 
 		imgCfg.Init()
 
+		if imgCfg.Discover != nil {
+			if u, err := imgCfg.Discover.Resolve(); err != nil {
+				if imgCfg.Url == "" {
+					zap.S().Errorw("URL discovery failed and no fallback url; skipping", "image", imgCfg.Name, "index", imgCfg.Discover.Index, "error", err)
+					continue
+				}
+				zap.S().Warnw("URL discovery failed; using pinned url", "image", imgCfg.Name, "index", imgCfg.Discover.Index, "url", imgCfg.Url, "error", err)
+			} else {
+				zap.S().Infow("Discovered newest build", "image", imgCfg.Name, "url", u)
+				imgCfg.Url = u
+			}
+		}
+
 		// Get upstream metadata to determine if a new image was published
 		meta, metaErr := image.FetchSourceMeta(imgCfg.Url)
 		if metaErr != nil {
